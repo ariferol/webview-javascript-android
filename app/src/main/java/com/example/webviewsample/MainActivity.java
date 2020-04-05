@@ -1,18 +1,9 @@
 package com.example.webviewsample;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.renderscript.RenderScript;
-import android.util.JsonReader;
-import android.util.JsonToken;
 import android.util.Log;
 import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
@@ -20,14 +11,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
+import androidx.appcompat.app.AppCompatActivity;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
 
 public class MainActivity extends AppCompatActivity {
     Context context = this;
@@ -58,10 +45,10 @@ public class MainActivity extends AppCompatActivity {
                           "metas[i].remove();" +
                         "}" +
                     "}" +
+//                    "window.location.reload();" +
                     "return result; " +
                 "}" +
             ")();";
-
 
     private WebViewClient webViewClient = new WebViewClient() {
         @Override
@@ -100,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         @Override
-        public void onPageFinished(WebView view, String url) {
+        public void onPageFinished(final WebView view, String url) {
             // Loading finished for URL
             new Handler().postDelayed(new Runnable() {
                 @Override
@@ -115,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
 //                        Log.println(Log.INFO,"Script sonucu :", s); // Prints: "this"
 //                    tcNo = s;
                     Log.i("GirilmisTCNo :", tcNoStr); // Prints: "this"
-                    Toast.makeText(context, "Script sonucu : " + tcNoStr, Toast.LENGTH_LONG).show();
+//                    Toast.makeText(context, "Script sonucu : " + tcNoStr, Toast.LENGTH_LONG).show();
                 }
             });
 //API19 oncesi destegi icin;
@@ -152,25 +139,32 @@ public class MainActivity extends AppCompatActivity {
 //                });
 //            }
 
-            /*GooglePlayMetaSonuc degerinin header dan kaldirilmasi islemi*/
+            /*GooglePlayMetaSonuc degerinin header dan kaldirilmasi islemi - test*/
             view.evaluateJavascript(playStoreMetaClearJSFunction, new ValueCallback<String>() {
                 @Override
                 public void onReceiveValue(String rsltMeta) {
                     if(!rsltMeta.isEmpty() && rsltMeta.contains("google-play-app")) {
                         rsltMeta1[0] = rsltMeta;
-                        pageRefreshJsFunction = "";
                     }
                     Log.i("GooglePlayMetaSonuc :", rsltMeta); // Prints: "this"
                 }
             });
 
-            if(!pageRefreshJsFunction.isEmpty())
-            view.evaluateJavascript(pageRefreshJsFunction, new ValueCallback<String>() {
+            view.evaluateJavascript("(function() { return document.getElementsByClassName(\"fieldError\")[0]; })();", new ValueCallback<String>() {
                 @Override
-                public void onReceiveValue(String rsltRefreshStr) {
-                    Log.i("RefreshScrResult :", rsltRefreshStr); // Prints: "this"
+                public void onReceiveValue(String rsltErr) {
+                    Log.i("ErrorFieldResult :", rsltErr);
                 }
             });
+
+            /*Sayfa icindeki mobil uygulama redirect banner remove scriptidir.Sayfa yuklendikten 2 saniye sonra remove edilebiliyor.(Contributed by Resul Riza DOLANER)*/
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    view.loadUrl("javascript:(function() {document.documentElement.style.marginTop = \"0px\";})()");
+                    view.loadUrl("javascript:document.getElementById(\"smartbanner\").setAttribute(\"style\",\"display:none;\");");
+                }
+            }, 2000);
         }
     };
 
